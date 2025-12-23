@@ -25,3 +25,11 @@ def load_config() -> AppConfig:
         return AppConfig(**data)
     except Exception:
         return _write_default(cfg_path)
+
+
+def save_config(config: AppConfig) -> AppConfig:
+    paths.ensure_base_dirs()
+    cfg_path = paths.config_file()
+    with cfg_path.open("w", encoding="utf-8") as f:
+        json.dump(config.model_dump(), f, ensure_ascii=True, indent=2)
+    return config

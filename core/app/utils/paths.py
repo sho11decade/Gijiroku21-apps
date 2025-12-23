@@ -21,8 +21,13 @@ def config_file() -> Path:
 
 
 def meeting_dir(meeting_id: str) -> Path:
-    # meeting_id is expected to start with YYYY-MM-DD, so reuse as folder
-    return meetings_root() / meeting_id.split("-")[0]
+    # meeting_id format: YYYY-MM-DD-HHMMSS... → use YYYY-MM-DD as directory
+    parts = meeting_id.split("-")
+    if len(parts) >= 3:
+        date_part = "-".join(parts[:3])
+    else:
+        date_part = meeting_id
+    return meetings_root() / date_part
 
 
 def ensure_base_dirs() -> None:

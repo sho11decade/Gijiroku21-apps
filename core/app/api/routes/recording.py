@@ -8,6 +8,7 @@ from core.app.models.recording import (
     StopRecordingResponse,
 )
 from core.app.models.response import Envelope, success_response
+from core.app.services import asr_pipeline, audio_capture
 from core.app.services import recording_state
 from core.app.utils import paths
 
@@ -24,6 +25,15 @@ async def start_recording(payload: StartRecordingRequest) -> Envelope[StartRecor
     except RuntimeError as exc:  # already active
         raise HTTPException(status_code=400, detail=str(exc))
 
+    # Hook for audio capture start
+    audio_capture.start_capture(meeting_id=meeting_id, save_audio=payload.save_audio)
+
+    # Start dummy ASR pipeline (replace with real pipeline later)
+    try:
+        await asr_pipeline.start(meeting_id)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
     # Ensure storage directories exist up-front
     paths.ensure_base_dirs()
     meeting_dir = paths.meeting_dir(meeting_id)
@@ -38,6 +48,12 @@ async def stop_recording() -> Envelope[StopRecordingResponse]:
         _ = recording_state.stop()
     except RuntimeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+    # Hook for audio capture stop
+    audio_capture.stop_capture()
+
+    # Stop ASR pipeline
+    await asr_pipeline.stop()
 
     # TODO: calculate real duration once audio pipeline is connected
     return success_response(StopRecordingResponse(duration_sec=0))
