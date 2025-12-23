@@ -16,7 +16,9 @@ def _patch_paths(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(paths, "app_root", lambda: base / "Gijiroku21")
     monkeypatch.setattr(paths, "meetings_root", lambda: base / "Gijiroku21" / "meetings")
     monkeypatch.setattr(paths, "config_file", lambda: base / "Gijiroku21" / "config.json")
-    monkeypatch.setattr(paths, "meeting_dir", lambda mid: base / "Gijiroku21" / "meetings" / mid.split("-")[0])
+    monkeypatch.setattr(paths, "meeting_dir", lambda mid: base / "Gijiroku21" / "meetings" / "-".join(mid.split("-")[:3]))
+    monkeypatch.setenv("GIJIROKU21_FAKE_AUDIO", "1")
+    monkeypatch.setenv("GIJIROKU21_FAKE_ASR", "1")
 
 
 def _collect_sse_lines(lines: Iterable[bytes]) -> list[str]:
@@ -66,7 +68,7 @@ def test_record_start_stop(monkeypatch, tmp_path: Path):
 
     resp2 = client.post("/record/stop")
     assert resp2.status_code == 200
-    assert resp2.json()["data"]["duration_sec"] == 0
+    assert resp2.json()["data"]["duration_sec"] >= 0
 
 
 def test_record_stop_writes_audio_when_enabled(monkeypatch, tmp_path: Path):
@@ -99,3 +101,26 @@ def test_transcript_stream_initial_status(monkeypatch, tmp_path: Path):
 
     decoded = _collect_sse_lines(lines)
     assert any("stream_ready" in line for line in decoded)
+
+
+def test_transcript_stream_emits_partial_after_record(monkeypatch, tmp_path: Path):
+    _patch_paths(monkeypatch, tmp_path)
+
+    payload = {"meeting_title": "test", "language": "ja", "save_audio": False}
+    resp = client.post("/record/start", json=payload)
+    assert resp.status_code == 200
+
+    found_partial = False
+    with client.stream("GET", "/transcript/stream") as response:
+        for _ in range(20):  # allow several events to arrive
+            chunk = next(response.iter_lines())
+            if chunk:
+                text = chunk.decode()
+                if "partial" in text:
+                    found_partial = True
+                    break
+
+    assert found_partial
+
+    resp2 = client.post("/record/stop")
+    assert resp2.status_code == 200

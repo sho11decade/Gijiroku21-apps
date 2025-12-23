@@ -10,6 +10,15 @@ async def publish(event: TranscriptEvent) -> None:
     await _queue.put(event)
 
 
+def reset_queue() -> None:
+    """Drop all pending events (useful when starting a new recording)."""
+    while not _queue.empty():
+        try:
+            _queue.get_nowait()
+        except asyncio.QueueEmpty:
+            break
+
+
 async def stream_events(heartbeat_interval: float = 5.0) -> AsyncGenerator[TranscriptEvent, None]:
     # Send initial ready event
     yield TranscriptEvent(type="status", status="stream_ready")

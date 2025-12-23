@@ -45,7 +45,7 @@ async def start_recording(payload: StartRecordingRequest) -> Envelope[StartRecor
 @router.post("/stop", response_model=Envelope[StopRecordingResponse])
 async def stop_recording() -> Envelope[StopRecordingResponse]:
     try:
-        _ = recording_state.stop()
+        meeting_id, started_at = recording_state.stop()
     except RuntimeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -55,5 +55,8 @@ async def stop_recording() -> Envelope[StopRecordingResponse]:
     # Stop ASR pipeline
     await asr_pipeline.stop()
 
-    # TODO: calculate real duration once audio pipeline is connected
-    return success_response(StopRecordingResponse(duration_sec=0))
+    duration = 0
+    if started_at:
+        duration = int((datetime.utcnow() - started_at).total_seconds())
+
+    return success_response(StopRecordingResponse(duration_sec=duration))

@@ -27,6 +27,7 @@ async def _ensure_engine() -> WhisperEngine:
 
 async def _runner(meeting_id: str) -> None:
     engine = await _ensure_engine()
+    await transcript_stream.publish(TranscriptEvent(type="status", status="asr_started"))
     try:
         async for event_type, text in engine.stream_transcript(meeting_id):
             await transcript_stream.publish(TranscriptEvent(type=event_type, text=text))
@@ -43,6 +44,7 @@ async def start(meeting_id: str) -> None:
     global _task
     if _task and not _task.done():
         raise RuntimeError(aSYNC_START_ERR)
+    transcript_stream.reset_queue()
     _task = asyncio.create_task(_runner(meeting_id))
 
 
