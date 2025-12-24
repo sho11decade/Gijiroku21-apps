@@ -30,6 +30,18 @@ def meeting_dir(meeting_id: str) -> Path:
     return meetings_root() / date_part
 
 
+def meta_file(meeting_id: str) -> Path:
+    return meeting_dir(meeting_id) / "meta.json"
+
+
+def transcript_file(meeting_id: str) -> Path:
+    return meeting_dir(meeting_id) / "transcript.txt"
+
+
+def summary_file(meeting_id: str) -> Path:
+    return meeting_dir(meeting_id) / "summary.md"
+
+
 def ensure_base_dirs() -> None:
     for path in [app_root(), meetings_root()]:
         path.mkdir(parents=True, exist_ok=True)

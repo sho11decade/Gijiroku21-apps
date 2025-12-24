@@ -3,29 +3,27 @@
 ローカル完結型議事録アプリの Python Core 実装メモ。
 
 ## 実装状況（現在）
-- FastAPI アプリ骨格と共通レスポンス `{ success, data, error }`
-- エンドポイント: `/status`, `/config` (GET/POST), `/record/start`, `/record/stop`, `/transcript/stream`
-- 録音状態管理（thread-safe）、ダミー audio capture フック、ダミー ASR パイプライン（partial/final イベント送信）
-- SSE ブローカー（asyncio.Queue）で transcript イベントを配信
-- デバイス選択はスタブ（`auto` 固定）
+ - FastAPI アプリ骨格と共通レスポンス `{ success, data, error }`
+ - エンドポイント: `/status`, `/config` (GET/POST), `/record/start`, `/record/stop`, `/transcript/stream`
+ - 録音状態管理（thread-safe）、sounddevice 録音（未導入または `GIJIROKU21_FAKE_AUDIO=1` なら無音WAV）
+ - ASR パイプライン: Whisper ONNX ロードを試行（環境変数 `GIJIROKU21_WHISPER_ONNX`）。未提供/`GIJIROKU21_FAKE_ASR=1` ではダミー partial/final を配信
+ - SSE ブローカー（asyncio.Queue）で transcript イベントを配信
+ - デバイス選択: onnxruntime providers から簡易判定（NPU/GPU/CPU/auto）
 
 ## 実行方法（開発）
-- 依存インストール（仮想環境推奨）: `pip install fastapi uvicorn pydantic`
-- 実行: `uvicorn main:app --reload --host 127.0.0.1 --port 8765`
+ - 依存インストール（仮想環境推奨）: `pip install fastapi uvicorn pydantic`
+ - 実行（リポジトリルートで実行。core直下では `core` モジュールが解決されません）:
+	 `uvicorn core.main:app --reload --host 127.0.0.1 --port 8765`
 - API ドキュメント: `http://127.0.0.1:8765/docs`
 
 ## エンドポイント概要
-- `GET /status` : ai_state (`ready`/`listening`)、recording、model、device、uptime を返却
-- `POST /record/start` : meeting_id を発行し録音状態を ON、ダミー ASR を開始
-- `POST /record/stop` : 録音状態を OFF、ASR を停止（duration は仮で 0）
-- `GET /transcript/stream` : SSE。initial `stream_ready` → heartbeat 5s。ASR が partial/final を publish
-- `GET/POST /config` : Documents/Gijiroku21/config.json の読込・保存
+ - `POST /record/stop` : 録音状態を OFF、ASR を停止。録音開始時刻から duration_sec を算出
 
 ## 既知の制約 / TODO
-- 音声キャプチャは未実装（audio_capture は空のフック）
-- Whisper ONNX 推論は未統合（asr_pipeline はダミー送信のみ）
-- デバイス検出は固定値 `auto`
-- duration 計測なし
+ - 音声キャプチャ: sounddevice が無い場合は無音WAV。実録時は WAV 保存、push は未接続
+ - Whisper ONNX 推論: モデルパス未指定/非存在時はダミー。実推論は未実装
+ - デバイス検出: onnxruntime providers 依存の簡易判定
+ - duration: start/stop 時刻差で算出（実録音長との同期は未調整）
 
 ## 次の着手候補
 - sounddevice/pyaudio を使った音声キャプチャ実装と保存

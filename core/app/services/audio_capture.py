@@ -13,6 +13,7 @@ from threading import Lock
 from typing import Optional
 
 from core.app.utils import paths
+from core.app.utils import pcm_queue
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
@@ -55,6 +56,8 @@ def _start_sounddevice(target_path: Optional[Path]) -> None:
             pass
         if wav_handle:
             wav_handle.writeframes(indata.tobytes())
+        # push PCM to queue for ASR
+        pcm_queue.push(bytes(indata))
 
     _stream = sd.RawInputStream(
         samplerate=SAMPLE_RATE,

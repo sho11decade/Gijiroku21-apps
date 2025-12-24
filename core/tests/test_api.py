@@ -87,6 +87,28 @@ def test_record_stop_writes_audio_when_enabled(monkeypatch, tmp_path: Path):
     assert audio_path.exists()
 
 
+def test_meetings_list_and_detail(monkeypatch, tmp_path: Path):
+    _patch_paths(monkeypatch, tmp_path)
+
+    payload = {"meeting_title": "mtg1", "language": "ja", "save_audio": False}
+    resp = client.post("/record/start", json=payload)
+    meeting_id = resp.json()["data"]["meeting_id"]
+    client.post("/record/stop")
+
+    resp_list = client.get("/meetings")
+    assert resp_list.status_code == 200
+    items = resp_list.json()["data"]
+    assert len(items) == 1
+    assert items[0]["meeting_id"] == meeting_id
+    assert items[0]["title"] == "mtg1"
+
+    resp_detail = client.get(f"/meetings/{meeting_id}")
+    assert resp_detail.status_code == 200
+    meta = resp_detail.json()["data"]["meta"]
+    assert meta["meeting_id"] == meeting_id
+    assert meta["title"] == "mtg1"
+
+
 def test_transcript_stream_initial_status(monkeypatch, tmp_path: Path):
     _patch_paths(monkeypatch, tmp_path)
 

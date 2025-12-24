@@ -12,6 +12,7 @@ from typing import Optional
 from core.app.models.transcript import TranscriptEvent
 from core.app.services.whisper_engine import WhisperEngine
 from core.app.utils import transcript_stream
+from core.app.utils import pcm_queue
 
 _task: Optional[asyncio.Task] = None
 _engine: Optional[WhisperEngine] = None
@@ -29,8 +30,8 @@ async def _runner(meeting_id: str) -> None:
     engine = await _ensure_engine()
     await transcript_stream.publish(TranscriptEvent(type="status", status="asr_started"))
     try:
-        async for event_type, text in engine.stream_transcript(meeting_id):
-            await transcript_stream.publish(TranscriptEvent(type=event_type, text=text))
+        async for event in engine.run_from_pcm_stream(meeting_id, pcm_queue.stream()):
+            await transcript_stream.publish(event)
     except asyncio.CancelledError:
         # Graceful shutdown
         await transcript_stream.publish(TranscriptEvent(type="status", status="asr_stopped"))
@@ -44,12 +45,14 @@ async def start(meeting_id: str) -> None:
     global _task
     if _task and not _task.done():
         raise RuntimeError(aSYNC_START_ERR)
+    pcm_queue.reset()
     transcript_stream.reset_queue()
     _task = asyncio.create_task(_runner(meeting_id))
 
 
 async def stop() -> None:
     global _task
+    pcm_queue.close()
     if _task and not _task.done():
         _task.cancel()
         try:
