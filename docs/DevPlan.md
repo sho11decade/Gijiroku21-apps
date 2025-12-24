@@ -245,6 +245,54 @@ Documents/Gijiroku21/
 
 ---
 
+## 12. 実装進捗（2025年12月）
+
+### 12.1 完了項目
+
+#### バックエンド（Python Core）
+- [x] FastAPI スケルトン実装
+- [x] 共通レスポンス型 `{ success, data, error }`
+- [x] `/status`, `/config` (GET/POST), `/record/start`, `/record/stop` エンドポイント
+- [x] sounddevice 音声キャプチャ（フォールバック対応）
+- [x] PCM バッファリング・キュー実装
+- [x] Whisper ONNX 統合（tokenizer.json ロード、log-mel 変換、グリーディデコード）
+- [x] SSE ベース `/transcript/stream` 配信
+- [x] `/meetings` 一覧・詳細エンドポイント
+- [x] 会議メタ（開始時刻、終了時刻、duration、タイトル）保存
+- [x] 基本エンドポイントの単体テスト（pytest）
+- [x] ダミーモード（環境変数で fallback）
+
+#### フロントエンド
+- [ ] React + TypeScript スケルトン
+- [ ] Electron ウィンドウ
+- [ ] ホーム画面（録音開始ボタン）
+- [ ] リアルタイム文字起こし表示
+- [ ] SSE リスナー実装
+
+### 12.2 実装予定
+
+#### 短期（バックエンド）
+- [ ] 完全なテキスト transcription 保存（transcript.txt）
+- [ ] 要約生成・保存（summary.md）
+- [ ] `/export` エンドポイント (TXT/Markdown ダウンロード)
+- [ ] 本格的な統合テスト（実オーディオ流）
+- [ ] エラーハンドリング強化
+
+#### 中期
+- [ ] フロントエンド実装
+- [ ] SSE リアルタイム UI テスト
+- [ ] PyInstaller + Electron バンドル
+- [ ] Windows インストーラー
+
+#### 将来
+- [ ] 話者分離 / 識別
+- [ ] キーワード抽出
+- [ ] 決定事項・ToDo 自動抽出
+- [ ] 多言語サポート
+- [ ] NPU 最適化
+
+---
+
 ## 補足
 
 本仕様書は **技術検証・プロトタイプ → 実用版** への移行を前提とした

@@ -334,6 +334,32 @@
 
 ---
 
+## 11. 実装状況（2025年12月）
+
+### 11.1 完了エンドポイント
+- [x] `GET /status` - ai_state, recording, model, device, uptime_sec を返す
+- [x] `GET /config` - 設定 JSON を返す
+- [x] `POST /config` - 設定を保存
+- [x] `POST /record/start` - meeting_id 生成・ASR 起動
+- [x] `POST /record/stop` - duration_sec 算出・メタ保存
+- [x] `GET /transcript/stream` - SSE で partial/final/status/heartbeat を配信
+- [x] `GET /meetings` - 会議一覧 (meeting_id, title, start, duration_sec)
+- [x] `GET /meetings/{meeting_id}` - 会議詳細 (meta.json の内容)
+
+### 11.2 予定エンドポイント（優先順）
+- [ ] `POST /export` - TXT/Markdown 形式でダウンロード
+- [ ] `GET /meetings/{meeting_id}/transcript` - 全文テキスト
+- [ ] `GET /meetings/{meeting_id}/summary` - 要約取得
+- [ ] `DELETE /meetings/{meeting_id}` - 会議削除
+
+### 11.3 実装詳細
+- レスポンス形式：全て `{ success, data, error }` で統一
+- エラーハンドリング：code（例：RECORDING_IN_PROGRESS）+ message
+- SSE ハートビート：5秒タイムアウト時に heartbeat イベント配信
+- 会議ID生成：YYYY-MM-DD-XXX 形式で自動採番
+
+---
+
 ## 付記（設計思想）
 
 この API は

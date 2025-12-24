@@ -247,6 +247,34 @@ Documents/Gijiroku21/
 
 ---
 
+## 12. 実装状況（2025年12月）
+
+### 12.1 完了（バックエンドコア）
+- [x] FastAPI + Pydantic の基本骨格
+- [x] 共通レスポンス型 `{ success, data, error }`
+- [x] 音声入力管理：sounddevice + PCM キュー（fallback 対応）
+- [x] ASR：tokenizer.json ロード + log-mel 変換 + ONNX グリーディデコード
+- [x] リアルタイム文字起こし：SSE で partial/final/status 配信
+- [x] 議事録データ管理：meeting meta (開始、終了、duration、タイトル) 自動保存
+- [x] デバイス判定：onnxruntime providers 解析
+- [x] ダミーモード：環境変数で全機能 fallback
+
+### 12.2 今後実装予定（優先順）
+- [ ] Transcript 完全文保存（transcript.txt）
+- [ ] 要約生成・保存（summary.md）- 将来は LLM で自動化
+- [ ] テキスト後処理：日本語整形、句読点補完
+- [ ] `/export` エンドポイント (TXT/Markdown)
+- [ ] ロギング強化（エラーコード、処理時間）
+- [ ] 長時間録音テスト・メモリ最適化
+
+### 12.3 長期（フェーズ2以降）
+- [ ] 話者分離 / 識別タグ付与
+- [ ] 決定事項・ToDo 自動抽出
+- [ ] 複数言語モデル対応
+- [ ] NPU ベンダー別最適化エンジン
+
+---
+
 ## 付記
 
 本バックエンドは

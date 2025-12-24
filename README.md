@@ -35,3 +35,103 @@ Gijiroku21は、PC内で完結するローカルAI議事録アプリケーショ
 - PDF / Word 形式のエクスポート
 - NPUベンダーごとの最適化と自動アップデート通知
 - macOS / Linux への拡張
+
+## 実装進捗
+
+### バックエンド（Python Core）
+**状態：実装完了（~80%）**
+
+#### 完了項目
+- FastAPI による基本骨格とレスポンス統一形式 `{ success, data, error }`
+- 音声キャプチャ（sounddevice + PCM キュー）
+- **Whisper ONNX 統合**：tokenizer.json ロード、log-mel 変換、グリーディデコード実装
+- SSE によるリアルタイム partial/final 配信
+- 会議メタ自動保存（meta.json：開始時刻、終了時刻、duration）
+- `/status`, `/config`, `/record/start`, `/record/stop`, `/transcript/stream`, `/meetings`, `/meetings/{id}` エンドポイント実装
+- pytest による基本テスト
+
+#### 今後の予定（優先順）
+1. Transcript 完全文・要約の保存と `/export` エンドポイント
+2. テキスト後処理（日本語整形）
+3. 実オーディオでの統合テスト
+
+### フロントエンド（React + Electron）
+**状態：未実装**
+
+#### 予定項目
+1. React + TypeScript + Zustand スケルトン
+2. ホーム画面、リアルタイム文字起こし表示
+3. 会議一覧・詳細、設定画面
+4. SSE リスナー統合
+5. Electron ウィンドウ設定
+
+### 全体スケジュール目安
+- Core 最終化：2～3週間
+- Frontend 開発・統合テスト：3～4週間
+- パッケージング（PyInstaller + Electron）：1～2週間
+- インストーラー・リリース準備：1～2週間
+
+## 開発・運用ガイド
+
+### リポジトリ構成
+```
+Gijiroku21/
+├── core/                          # Python Core（FastAPI）
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── routes/           # エンドポイント実装
+│   │   │   └── dependencies.py
+│   │   ├── models/               # Pydantic モデル
+│   │   ├── services/             # ビジネスロジック
+│   │   │   ├── audio_capture.py
+│   │   │   ├── asr_pipeline.py
+│   │   │   ├── whisper_engine.py  # ONNX 推論
+│   │   │   └── recording_state.py
+│   │   └── utils/                # ユーティリティ
+│   │       ├── paths.py
+│   │       ├── storage.py        # meta.json 管理
+│   │       ├── pcm_queue.py
+│   │       ├── transcript_stream.py
+│   │       └── device.py
+│   ├── models/                   # whisper-small.onnx, tokenizer.json
+│   ├── tests/
+│   │   └── test_api.py
+│   ├── main.py                   # FastAPI app エントリポイント
+│   └── README.md                 # Core 実装ガイド
+├── frontend/                      # React + Electron（未実装）
+├── docs/
+│   ├── DevPlan.md               # 要件仕様・進捗
+│   ├── Architecture.md           # システム設計
+│   ├── APIDevPlan.md            # API 仕様
+│   └── BackendDevPlan.md        # Core 詳細仕様
+├── scripts/                       # ビルド・ヘルパースクリプト
+├── README.md
+└── pytest.ini
+```
+
+### Core 開発（Linux/macOS でも可能）
+```bash
+# リポジトリ直下で
+uvicorn core.main:app --reload --host 127.0.0.1 --port 8765
+
+# テスト
+pytest core/tests/ -v
+
+# ダミーモード（オーディオ/推論なし）
+GIJIROKU21_FAKE_AUDIO=1 GIJIROKU21_FAKE_ASR=1 pytest core/tests/ -v
+```
+
+### API ドキュメント
+起動後 `http://127.0.0.1:8765/docs` にアクセス
+
+### 設定ファイル
+- `config.json` : Documents/Gijiroku21/ 直下（ユーザー編集可）
+- `meta.json` : Documents/Gijiroku21/meetings/YYYY-MM-DD/ 配下（自動生成）
+
+## ドキュメント・参考資料
+
+- **要件仕様・開発計画** : [docs/DevPlan.md](docs/DevPlan.md)
+- **システムアーキテクチャ** : [docs/Architecture.md](docs/Architecture.md)
+- **API 仕様** : [docs/APIDevPlan.md](docs/APIDevPlan.md)
+- **Core 実装ガイド** : [core/README.md](core/README.md)
+- **Backend 詳細仕様** : [docs/BackendDevPlan.md](docs/BackendDevPlan.md)
